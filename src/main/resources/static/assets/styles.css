@@ -1,0 +1,93 @@
+/* PetLogs — 공통 스타일 (프로토타입 디자인 언어) */
+
+:root { color-scheme: light; }
+
+body {
+  background-color: #faf9f7;
+  color: #1a1c1b;
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif { font-family: "Playfair Display", serif; }
+
+/* Material Symbols 기본 세팅 */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+}
+.material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+
+/* 종이 위에 얹힌 듯한 부드러운 그림자 */
+.tactile-shadow {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* 폴라로이드 카드 */
+.polaroid-card {
+  background-color: #ffffff;
+  border: 1px solid #e3e2e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.polaroid-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* 입력 필드 — 포커스 시 무광 블루 테두리 */
+.field {
+  width: 100%;
+  border: 1px solid #c2c7ce;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #1a1c1b;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.field:focus {
+  outline: none;
+  border-color: #3c5f7b;
+  box-shadow: 0 0 0 3px rgba(60, 95, 123, 0.12);
+}
+.field::placeholder { color: #72787e; }
+
+/* 버튼 */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border-radius:0.75rem; font-weight:600; font-size:14px; padding:10px 18px;
+  cursor:pointer; transition:all .15s ease; border:1px solid transparent; white-space:nowrap; }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background:#3c5f7b; color:#fff; }
+.btn-primary:hover { background:#345572; }
+.btn-secondary { background:#fff; color:#3c5f7b; border-color:#3c5f7b; }
+.btn-secondary:hover { background:#f4f3f1; }
+.btn-ghost { background:transparent; color:#42474d; }
+.btn-ghost:hover { background:#efeeec; color:#3c5f7b; }
+.btn-danger { background:#fff; color:#ba1a1a; border-color:#ffdad6; }
+.btn-danger:hover { background:#ffdad6; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* 상태 태그 */
+.tag { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600;
+  letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:9999px; }
+.tag-pending   { background:#ffdbd1; color:#723524; }   /* terracotta */
+.tag-progress  { background:#cbe6ff; color:#254a65; }   /* blue */
+.tag-done      { background:#c7ecca; color:#2e4e35; }   /* green */
+.tag-neutral   { background:#e9e8e6; color:#42474d; }
+
+/* 부드러운 등장 애니메이션 */
+@keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+.fade-up { animation: fadeUp .35s ease both; }
+
+/* 스크롤바 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background:#dadad8; border-radius:9999px; border:2px solid #faf9f7; }
+::-webkit-scrollbar-thumb:hover { background:#c2c7ce; }
+
+/* 로딩 스피너 */
+.spinner { width:20px; height:20px; border:2px solid #c2c7ce; border-top-color:#3c5f7b;
+  border-radius:9999px; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+[v-cloak] { display: none; }

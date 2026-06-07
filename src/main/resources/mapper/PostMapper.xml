@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pettrainer.pro.community.mapper.PostMapper">
+
+    <resultMap id="postResultMap" type="com.pettrainer.pro.community.entity.Post">
+        <id     property="postId"         column="post_id"/>
+        <result property="writerId"       column="writer_id"/>
+        <result property="category"       column="category"/>
+        <result property="title"          column="title"/>
+        <result property="content"        column="content"/>
+        <result property="viewCount"      column="view_count"/>
+        <result property="hidden"         column="hidden"/>
+        <result property="createdAt"      column="created_at"/>
+        <result property="updatedAt"      column="updated_at"/>
+        <result property="writerName"     column="writer_name"/>
+        <result property="likeCount"      column="like_count"/>
+        <result property="commentCount"   column="comment_count"/>
+        <result property="likedByMe"      column="liked_by_me"/>
+        <result property="bookmarkedByMe" column="bookmarked_by_me"/>
+    </resultMap>
+
+    <resultMap id="commentResultMap" type="com.pettrainer.pro.community.entity.Comment">
+        <id     property="commentId"  column="comment_id"/>
+        <result property="postId"     column="post_id"/>
+        <result property="writerId"   column="writer_id"/>
+        <result property="content"    column="content"/>
+        <result property="createdAt"  column="created_at"/>
+        <result property="writerName" column="writer_name"/>
+    </resultMap>
+
+    <insert id="insertPost" useGeneratedKeys="true" keyProperty="postId">
+        INSERT INTO post (writer_id, category, title, content)
+        VALUES (#{writerId}, #{category}, #{title}, #{content})
+    </insert>
+
+    <select id="findPostsPage" resultMap="postResultMap">
+        SELECT p.*,
+               m.name AS writer_name,
+               (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = p.post_id) AS like_count,
+               (SELECT COUNT(*) FROM comment c WHERE c.post_id = p.post_id) AS comment_count
+        FROM post p
+        JOIN member m ON p.writer_id = m.member_id
+        WHERE p.hidden = 0
+        <if test="category != null and category != ''">
+            AND p.category = #{category}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.title LIKE CONCAT('%', #{keyword}, '%')
+              OR p.content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY p.created_at DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="countPosts" resultType="int">
+        SELECT COUNT(*) FROM post p
+        WHERE p.hidden = 0
+        <if test="category != null and category != ''">
+            AND p.category = #{category}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.title LIKE CONCAT('%', #{keyword}, '%')
+              OR p.content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <select id="findPostById" resultMap="postResultMap">
+        SELECT p.*,
+               m.name AS writer_name,
+               (SELECT COUNT(*) FROM post_like pl WHERE pl.post_id = p.post_id) AS like_count,
+               (SELECT COUNT(*) FROM comment c WHERE c.post_id = p.post_id) AS comment_count,
+               (SELECT COUNT(*) FROM post_like pl2 WHERE pl2.post_id = p.post_id AND pl2.member_id = #{memberId}) > 0 AS liked_by_me,
+               (SELECT COUNT(*) FROM bookmark bk WHERE bk.post_id = p.post_id AND bk.member_id = #{memberId}) > 0 AS bookmarked_by_me
+        FROM post p
+        JOIN member m ON p.writer_id = m.member_id
+        WHERE p.post_id = #{postId}
+    </select>
+
+    <update id="updatePost">
+        UPDATE post SET
+            category = #{category},
+            title    = #{title},
+            content  = #{content}
+        WHERE post_id = #{postId}
+    </update>
+
+    <delete id="deletePost">
+        DELETE FROM post WHERE post_id = #{postId}
+    </delete>
+
+    <update id="incrementViewCount">
+        UPDATE post SET view_count = view_count + 1 WHERE post_id = #{postId}
+    </update>
+
+    <insert id="insertLike">
+        INSERT IGNORE INTO post_like (post_id, member_id) VALUES (#{postId}, #{memberId})
+    </insert>
+
+    <delete id="deleteLike">
+        DELETE FROM post_like WHERE post_id = #{postId} AND member_id = #{memberId}
+    </delete>
+
+    <select id="existsLike" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM post_like WHERE post_id = #{postId} AND member_id = #{memberId}
+    </select>
+
+    <insert id="insertBookmark">
+        INSERT IGNORE INTO bookmark (post_id, member_id) VALUES (#{postId}, #{memberId})
+    </insert>
+
+    <delete id="deleteBookmark">
+        DELETE FROM bookmark WHERE post_id = #{postId} AND member_id = #{memberId}
+    </delete>
+
+    <select id="existsBookmark" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM bookmark WHERE post_id = #{postId} AND member_id = #{memberId}
+    </select>
+
+    <insert id="insertComment" useGeneratedKeys="true" keyProperty="commentId">
+        INSERT INTO comment (post_id, writer_id, content)
+        VALUES (#{postId}, #{writerId}, #{content})
+    </insert>
+
+    <select id="findCommentsByPostId" resultMap="commentResultMap">
+        SELECT c.*, m.name AS writer_name
+        FROM comment c
+        JOIN member m ON c.writer_id = m.member_id
+        WHERE c.post_id = #{postId}
+        ORDER BY c.created_at ASC
+    </select>
+
+    <select id="findCommentById" resultMap="commentResultMap">
+        SELECT c.*, m.name AS writer_name
+        FROM comment c
+        JOIN member m ON c.writer_id = m.member_id
+        WHERE c.comment_id = #{commentId}
+    </select>
+
+    <delete id="deleteComment">
+        DELETE FROM comment WHERE comment_id = #{commentId}
+    </delete>
+
+    <insert id="insertReport">
+        INSERT INTO post_report (post_id, reporter_id, reason) VALUES (#{postId}, #{reporterId}, #{reason})
+    </insert>
+
+</mapper>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pettrainer.pro.survey.mapper.SurveyMapper">
+
+    <resultMap id="surveyResultMap" type="com.pettrainer.pro.survey.entity.Survey">
+        <id     property="surveyId"        column="survey_id"/>
+        <result property="trainerId"       column="trainer_id"/>
+        <result property="petId"           column="pet_id"/>
+        <result property="token"           column="token"/>
+        <result property="ownerName"       column="owner_name"/>
+        <result property="ownerPhone"      column="owner_phone"/>
+        <result property="petName"         column="pet_name"/>
+        <result property="breed"           column="breed"/>
+        <result property="ageYears"        column="age_years"/>
+        <result property="gender"          column="gender"/>
+        <result property="neutered"        column="neutered"/>
+        <result property="problemBehavior" column="problem_behavior"/>
+        <result property="behaviorDetail"  column="behavior_detail"/>
+        <result property="trainingGoal"    column="training_goal"/>
+        <result property="status"          column="status"/>
+        <result property="submittedAt"     column="submitted_at"/>
+        <result property="createdAt"       column="created_at"/>
+        <result property="trainerName"     column="trainer_name"/>
+        <result property="hasAiAnalysis"   column="has_ai_analysis"/>
+        <result property="hasCaseCreated"  column="has_case_created"/>
+    </resultMap>
+
+    <resultMap id="aiResultMap" type="com.pettrainer.pro.survey.entity.AiAnalysis">
+        <id     property="analysisId"       column="analysis_id"/>
+        <result property="surveyId"         column="survey_id"/>
+        <result property="behaviorType"     column="behavior_type"/>
+        <result property="riskLevel"        column="risk_level"/>
+        <result property="summary"          column="summary"/>
+        <result property="trainingDirection" column="training_direction"/>
+        <result property="createdAt"        column="created_at"/>
+    </resultMap>
+
+    <insert id="insertToken" useGeneratedKeys="true" keyProperty="surveyId">
+        INSERT INTO survey (trainer_id, token, owner_name, pet_name, status)
+        VALUES (#{trainerId}, #{token}, #{ownerName}, #{petName}, '미확인')
+    </insert>
+
+    <update id="submitByToken">
+        UPDATE survey SET
+            owner_name       = #{ownerName},
+            owner_phone      = #{ownerPhone},
+            pet_name         = #{petName},
+            breed            = #{breed},
+            age_years        = #{ageYears},
+            gender           = #{gender},
+            neutered         = #{neutered},
+            problem_behavior = #{problemBehavior},
+            behavior_detail  = #{behaviorDetail},
+            training_goal    = #{trainingGoal},
+            submitted_at     = NOW()
+        WHERE token = #{token}
+    </update>
+
+    <select id="findByTrainerId" resultMap="surveyResultMap">
+        SELECT s.*,
+               m.name AS trainer_name,
+               (SELECT COUNT(*) FROM ai_analysis a WHERE a.survey_id = s.survey_id) > 0 AS has_ai_analysis,
+               (SELECT COUNT(*) FROM training_case tc WHERE tc.survey_id = s.survey_id) > 0 AS has_case_created
+        FROM survey s
+        JOIN member m ON s.trainer_id = m.member_id
+        WHERE s.trainer_id = #{trainerId}
+          AND s.submitted_at IS NOT NULL
+        ORDER BY s.submitted_at DESC
+    </select>
+
+    <select id="findById" resultMap="surveyResultMap">
+        SELECT s.*,
+               m.name AS trainer_name,
+               (SELECT COUNT(*) FROM ai_analysis a WHERE a.survey_id = s.survey_id) > 0 AS has_ai_analysis,
+               (SELECT COUNT(*) FROM training_case tc WHERE tc.survey_id = s.survey_id) > 0 AS has_case_created
+        FROM survey s
+        JOIN member m ON s.trainer_id = m.member_id
+        WHERE s.survey_id = #{surveyId}
+    </select>
+
+    <select id="findByToken" resultMap="surveyResultMap">
+        SELECT s.*, m.name AS trainer_name
+        FROM survey s
+        JOIN member m ON s.trainer_id = m.member_id
+        WHERE s.token = #{token}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE survey SET status = #{status} WHERE survey_id = #{surveyId}
+    </update>
+
+    <update id="updatePetId">
+        UPDATE survey SET pet_id = #{petId} WHERE survey_id = #{surveyId}
+    </update>
+
+    <insert id="insertAiAnalysis" useGeneratedKeys="true" keyProperty="analysisId">
+        INSERT INTO ai_analysis (survey_id, behavior_type, risk_level, summary, training_direction)
+        VALUES (#{surveyId}, #{behaviorType}, #{riskLevel}, #{summary}, #{trainingDirection})
+    </insert>
+
+    <select id="findAiAnalysisBySurveyId" resultMap="aiResultMap">
+        SELECT * FROM ai_analysis WHERE survey_id = #{surveyId}
+    </select>
+
+    <select id="countUnconfirmed" resultType="int">
+        SELECT COUNT(*) FROM survey
+        WHERE trainer_id = #{trainerId}
+          AND status = '미확인'
+          AND submitted_at IS NOT NULL
+    </select>
+
+    <select id="findRecentByTrainerId" resultMap="surveyResultMap">
+        SELECT s.*, m.name AS trainer_name
+        FROM survey s
+        JOIN member m ON s.trainer_id = m.member_id
+        WHERE s.trainer_id = #{trainerId}
+          AND s.submitted_at IS NOT NULL
+        ORDER BY s.submitted_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pettrainer.pro.pet.mapper.PetMapper">
+
+    <resultMap id="petResultMap" type="com.pettrainer.pro.pet.entity.Pet">
+        <id     property="petId"      column="pet_id"/>
+        <result property="trainerId"  column="trainer_id"/>
+        <result property="ownerName"  column="owner_name"/>
+        <result property="ownerPhone" column="owner_phone"/>
+        <result property="name"       column="name"/>
+        <result property="breed"      column="breed"/>
+        <result property="age"        column="age"/>
+        <result property="gender"     column="gender"/>
+        <result property="neutered"   column="neutered"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="petId">
+        INSERT INTO pet (trainer_id, owner_name, owner_phone, name, breed, age, gender, neutered)
+        VALUES (#{trainerId}, #{ownerName}, #{ownerPhone}, #{name}, #{breed}, #{age}, #{gender}, #{neutered})
+    </insert>
+
+    <select id="findById" resultMap="petResultMap">
+        SELECT * FROM pet WHERE pet_id = #{petId}
+    </select>
+
+</mapper>

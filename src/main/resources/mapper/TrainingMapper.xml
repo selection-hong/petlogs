@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pettrainer.pro.training.mapper.TrainingMapper">
+
+    <resultMap id="caseResultMap" type="com.pettrainer.pro.training.entity.TrainingCase">
+        <id     property="caseId"       column="case_id"/>
+        <result property="trainerId"    column="trainer_id"/>
+        <result property="petId"        column="pet_id"/>
+        <result property="surveyId"     column="survey_id"/>
+        <result property="status"       column="status"/>
+        <result property="memo"         column="memo"/>
+        <result property="startedAt"    column="started_at"/>
+        <result property="completedAt"  column="completed_at"/>
+        <result property="petName"      column="pet_name"/>
+        <result property="breed"        column="breed"/>
+        <result property="petAge"       column="pet_age"/>
+        <result property="ownerName"    column="owner_name"/>
+        <result property="sessionCount" column="session_count"/>
+    </resultMap>
+
+    <resultMap id="logResultMap" type="com.pettrainer.pro.training.entity.TrainingLog">
+        <id     property="logId"       column="log_id"/>
+        <result property="caseId"      column="case_id"/>
+        <result property="sessionNo"   column="session_no"/>
+        <result property="goal"        column="goal"/>
+        <result property="content"     column="content"/>
+        <result property="improvement" column="improvement"/>
+        <result property="trainedAt"   column="trained_at"/>
+    </resultMap>
+
+    <!-- 케이스 -->
+    <insert id="insertCase" useGeneratedKeys="true" keyProperty="caseId">
+        INSERT INTO training_case (trainer_id, pet_id, survey_id, status, memo)
+        VALUES (#{trainerId}, #{petId}, #{surveyId}, #{status}, #{memo})
+    </insert>
+
+    <select id="findCasesByTrainerId" resultMap="caseResultMap">
+        SELECT tc.*,
+               p.name       AS pet_name,
+               p.breed      AS breed,
+               p.age        AS pet_age,
+               p.owner_name AS owner_name,
+               (SELECT COUNT(*) FROM training_log tl WHERE tl.case_id = tc.case_id) AS session_count
+        FROM training_case tc
+        JOIN pet p ON tc.pet_id = p.pet_id
+        WHERE tc.trainer_id = #{trainerId}
+        ORDER BY tc.started_at DESC
+    </select>
+
+    <select id="findCaseById" resultMap="caseResultMap">
+        SELECT tc.*,
+               p.name       AS pet_name,
+               p.breed      AS breed,
+               p.age        AS pet_age,
+               p.owner_name AS owner_name,
+               (SELECT COUNT(*) FROM training_log tl WHERE tl.case_id = tc.case_id) AS session_count
+        FROM training_case tc
+        JOIN pet p ON tc.pet_id = p.pet_id
+        WHERE tc.case_id = #{caseId}
+    </select>
+
+    <update id="updateCaseStatus">
+        UPDATE training_case SET
+            status = #{status},
+            completed_at = IF(#{status} = '완료', NOW(), completed_at)
+        WHERE case_id = #{caseId}
+    </update>
+
+    <!-- 일지 -->
+    <insert id="insertLog" useGeneratedKeys="true" keyProperty="logId">
+        INSERT INTO training_log (case_id, session_no, goal, content, improvement)
+        VALUES (#{caseId}, #{sessionNo}, #{goal}, #{content}, #{improvement})
+    </insert>
+
+    <select id="findLogsByCaseId" resultMap="logResultMap">
+        SELECT * FROM training_log WHERE case_id = #{caseId} ORDER BY session_no DESC
+    </select>
+
+    <select id="findLogById" resultMap="logResultMap">
+        SELECT * FROM training_log WHERE log_id = #{logId}
+    </select>
+
+    <update id="updateLog">
+        UPDATE training_log SET
+            goal        = #{goal},
+            content     = #{content},
+            improvement = #{improvement}
+        WHERE log_id = #{logId}
+    </update>
+
+    <delete id="deleteLog">
+        DELETE FROM training_log WHERE log_id = #{logId}
+    </delete>
+
+    <select id="countLogsByCaseId" resultType="int">
+        SELECT COUNT(*) FROM training_log WHERE case_id = #{caseId}
+    </select>
+
+    <!-- 대시보드 통계 -->
+    <select id="countInProgress" resultType="int">
+        SELECT COUNT(*) FROM training_case
+        WHERE trainer_id = #{trainerId} AND status = '훈련 중'
+    </select>
+
+    <select id="countCompletedThisMonth" resultType="int">
+        SELECT COUNT(*) FROM training_case
+        WHERE trainer_id = #{trainerId}
+          AND status = '완료'
+          AND MONTH(completed_at) = MONTH(NOW())
+          AND YEAR(completed_at) = YEAR(NOW())
+    </select>
+
+    <select id="countTotalCases" resultType="int">
+        SELECT COUNT(*) FROM training_case WHERE trainer_id = #{trainerId}
+    </select>
+
+    <select id="findRecentCasesByTrainerId" resultMap="caseResultMap">
+        SELECT tc.*,
+               p.name       AS pet_name,
+               p.breed      AS breed,
+               p.age        AS pet_age,
+               p.owner_name AS owner_name,
+               (SELECT COUNT(*) FROM training_log tl WHERE tl.case_id = tc.case_id) AS session_count
+        FROM training_case tc
+        JOIN pet p ON tc.pet_id = p.pet_id
+        WHERE tc.trainer_id = #{trainerId}
+        ORDER BY tc.started_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
